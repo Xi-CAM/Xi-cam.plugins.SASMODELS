@@ -1,0 +1,8 @@
+[core]
+Name = sasmodels
+Module = __init__.py
+
+[Documentation]
+Author = Dinesh Kumar
+Version = 1.0.0
+
