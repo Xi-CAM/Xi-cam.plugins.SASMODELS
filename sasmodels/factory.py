@@ -19,7 +19,7 @@ def XicamModel(name, params):
         func (XicamFittable) : function that takes q-values and returns intensity values
 
 """
-    inputs = list(params.keys())
+    inputs = [p.name for p in params]
     m = load_model(name)
 
     # evaluate callback
@@ -34,7 +34,7 @@ def XicamModel(name, params):
         'outputs': ['Iq'],
         'evaluate': staticmethod(saxs_curve)
     }
-    p = dict((key, Parameter(key, default=val)) for key, val in params.items())
+    p = dict((p.name, p) for p in params)
     names.update(p)
     return type('XicamFittable', (Fittable1DModelPlugin,), names)()
 
