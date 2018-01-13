@@ -1,9 +1,13 @@
 #! /usr/bin/env python
 
 from sasmodels.core import load_model
+from sasmodels.direct_model import call_kernel
 from astropy.modeling import Parameter
-from xicam.plugins import Fittable1DModelPlugin
+from astropy.modeling import Fittable1DModel
+#from xicam.plugins import Fittable1DModelPlugin
 
+def create_param(v):
+    return Parameter(v.name(), default=v.value())
 
 
 def XicamModel(name, params):
@@ -19,8 +23,9 @@ def XicamModel(name, params):
         func (XicamFittable) : function that takes q-values and returns intensity values
 
 """
-    inputs = [p.name for p in params]
-    m = load_model(name)
+    inputs = [p.name() for p in params]
+    model_name = name.lower().replace(' ','_')
+    m = load_model(model_name)
 
     # evaluate callback
     def saxs_curve(q, *args):
@@ -30,24 +35,29 @@ def XicamModel(name, params):
 
     # create an astropy fittable model
     names = {
+        'name': 'SASModelFittable'+name,
         'inputs': inputs,
         'outputs': ['Iq'],
         'evaluate': staticmethod(saxs_curve)
     }
-    p = dict((p.name, p) for p in params)
+    p = dict((p.name(), create_param(p)) for p in params)
     names.update(p)
-    return type('XicamFittable', (Fittable1DModelPlugin,), names)()
+    #return type('SASModelFittable', (Fittable1DModelPlugin,), names)()
+    return type('SASModelFittable', (Fittable1DModel,), names)()
 
-def main():
+def test():
     import matplotlib.pyplot as plt
     import numpy as np
+    from pyqtgraph.parametertree import Parameter
     q = np.linspace(0, 1, 512)
     name = 'cylinder'
-    params =  { 'radius': 200., 'height':1000. }
+    r = Parameter.create(name='radius', value=200.)
+    h = Parameter.create(name='height', value=1000.)
+    params =  [r, h]
     func = XicamModel(name, params)
     Iq = func(q)
     plt.loglog(q, Iq)
     plt.show()
 
 if __name__ == '__main__':
-    main()
+    test()

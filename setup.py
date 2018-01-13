@@ -9,7 +9,7 @@ Usage: pip install -e .
 from setuptools import setup
 
 setup(
-    name='xicam.plugins.sasmodels',
+    name='xicam.plugins.sasmodels_plugin',
     version='1.0.0',
     description= """ write something useful here """,
 
@@ -45,7 +45,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=['sasmodels'],
+    packages=['sasmodels_plugin'],
     package_dir={'sasmodels':'sasmodels'},
     install_requires=['Xicam'],
     setup_requires=[],

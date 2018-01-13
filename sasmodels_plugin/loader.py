@@ -4,8 +4,7 @@
 import yaml
 from collections import OrderedDict
 from pyqtgraph.parametertree import Parameter
-#from xicam.plugins import Fittable1DModelPlugin
-#from factory import XicamModel
+from factory import XicamModel
 
 cfg = 'config.yml'
 
@@ -16,6 +15,12 @@ Categories = [\
     ]
 
 
+# Fitting related
+_fixed = { 'name':'Fixed', 'value': True, 'type':'bool' }
+_bounds = [{'name':'Lower', 'value':'-\u221E'}, {'name':'Upper', 'value':'\u221E'}]
+_bounded ={ 'name':'Bounded', 'value':False, 'type':'bool', 
+        'children':_bounds, 'visible':False, 'enabled':False }
+
 # resolve metaclass conflict
 class XiMetaParam(type(yaml.YAMLObject), type(Parameter)):
     pass
@@ -23,18 +28,17 @@ class XiMetaParam(type(yaml.YAMLObject), type(Parameter)):
 class XiCamParameter(yaml.YAMLObject, Parameter, metaclass=XiMetaParam):
     yaml_tag = u'!YMLParameter'
     def __init__(self, name, description, value, units, **kwags):
-        self.value = value
-        self.description = description
-        Parameter.__init__(self, name=name, value = value, title = description)
+        Parameter.__init__(self, name=name, value = value, \
+            title = description, children=[_fixed, _bounded])
 
     def __repr__(self):
         return "%s (%r, value=%r)" % \
-            (self.__class__.__name__, self.description, self.value)
+            (self.__class__.__name__, self.name(), self.value())
 
     @classmethod
     def from_yaml(cls, loader, node):
-        tmp = loader.construct_mapping(node)
-        return cls(**tmp)
+        opts = loader.construct_mapping(node)
+        return cls(**opts)
 
 def load_models():
     fp = open(cfg)
@@ -46,13 +50,18 @@ def load_models():
         for key, val in yml[cat].items():
             models = OrderedDict()
             for name, params in val.items():
-                params = [ p['param'] for p in params ]
-                models[name] = params
+                _params = [ p['param'] for p in params ]
+                _model = XicamModel(name, _params)
+                for p_name in _model.fixed.keys():
+                    _model.fixed[p_name] = True
+                models[name] = OrderedDict({'model':_model, 'params': _params})
             model_tree[key] = models
         fittables.append(model_tree)
     return fittables
 
 if __name__ == '__main__':
     models = load_models()
-    for key, val in models[0].items():
-        print(str(key)+' : '+str(val))
+    m = models[0]
+    print(m['Cylinder Functions']['Barbell']['params'][0].child('Fixed'))
+    mod = m['Cylinder Functions']['Barbell']['model']
+    print(mod.fixed)
