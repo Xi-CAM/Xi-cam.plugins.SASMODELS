@@ -4,7 +4,6 @@
 import yaml
 from collections import OrderedDict
 from pyqtgraph.parametertree import Parameter
-from factory import XicamModel
 
 cfg = 'config.yml'
 
@@ -51,10 +50,7 @@ def load_models():
             models = OrderedDict()
             for name, params in val.items():
                 _params = [ p['param'] for p in params ]
-                _model = XicamModel(name, _params)
-                for p_name in _model.fixed.keys():
-                    _model.fixed[p_name] = True
-                models[name] = OrderedDict({'model':_model, 'params': _params})
+                models[name] = {'params': _params}
             model_tree[key] = models
         fittables.append(model_tree)
     return fittables
@@ -62,6 +58,6 @@ def load_models():
 if __name__ == '__main__':
     models = load_models()
     m = models[0]
-    print(m['Cylinder Functions']['Barbell']['params'][0].child('Fixed'))
-    mod = m['Cylinder Functions']['Barbell']['model']
-    print(mod.fixed)
+    #print(m['Cylinder Functions']['Barbell'])
+    model = m['Cylinder Functions']['Barbell']['model']
+    print(model.param_names)

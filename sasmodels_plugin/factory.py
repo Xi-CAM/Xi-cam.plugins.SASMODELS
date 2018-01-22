@@ -4,13 +4,12 @@ from sasmodels.core import load_model
 from sasmodels.direct_model import call_kernel
 from astropy.modeling import Parameter
 from astropy.modeling import Fittable1DModel
-#from xicam.plugins import Fittable1DModelPlugin
 
 def create_param(v):
     return Parameter(v.name(), default=v.value())
 
 
-def XicamModel(name, params):
+def XicamSASModel(name, params):
     """
     XicamModel wraps sasmdoels from sasview (https://github.com/SasView/sasmodles),
     in a fittable 1-D plugin for Xi-cam. This object can be passed to astropy for
@@ -35,14 +34,13 @@ def XicamModel(name, params):
 
     # create an astropy fittable model
     names = {
-        'name': 'SASModelFittable'+name,
+        'name': 'SASFittable_'+name+'Model',
         'inputs': inputs,
-        'outputs': ['Iq'],
+        'outputs': ['I'],
         'evaluate': staticmethod(saxs_curve)
     }
     p = dict((p.name(), create_param(p)) for p in params)
     names.update(p)
-    #return type('SASModelFittable', (Fittable1DModelPlugin,), names)()
     return type('SASModelFittable', (Fittable1DModel,), names)()
 
 def test():

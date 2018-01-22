@@ -3,10 +3,12 @@
 
 from yapsy.IPlugin import IPlugin
 from xicam.plugins import QWidgetPlugin
+form xicam.gui import threads
 from qtpy.QtWidgets import QVboxLayout, QComboBox, QPushButton
 from collections import OderedDict
 
 from astropy.modeling import fitting
+from factory import XicamSASModel
 from loader import load_models, Categories
 
 
@@ -21,49 +23,72 @@ class SASModelsWidget(QWidgetPlugin):
         })
     
     def __init__(self, *args, **kwargs):
-        models = load_models()
+        self.models = load_models()
         super().__init__(self, *args, *kwargs)
 
         # verticle layout
-        self.vlayout = QVboxLayout()
+        vlayout = QVboxLayout()
 
         # add a dropdown list of fitting routines
         self.fitterbox = QComboBox()
         self.fitterox.addItems(list(fitters.keys()))
-        self.vlayout.addWidget(self.fitterbox)
+        vlayout.addWidget(self.fitterbox)
 
         # add a dropdown list of model catagories
         self.catbox = QComboBox()
         self.catbox.addItems(Categories)
-        self.vlayout.addWidget(self.catbox)
+        vlayout.addWidget(self.catbox)
 
         # add menu for sub-catagories 
         cat = self.catbox.currentText()
         self.subcatbox = QComboBox()
-        self.subcatbox.addItems(list(models[cat]))
-        self.vlayout.addWidget(self.subcatbox)
+        self.subcatbox.addItems(list(self.models[cat]))
+        vlayout.addWidget(self.subcatbox)
 
         # add list of models in subcategory
         subcat = self.subcatbox.currentText()
         self.modelsbox = QComboBox()
-        self.modelsbox.addItems(list(models[cat][subcat]))
-        self.vlayout.addWidget(self.modelsbox)
+        self.modelsbox.addItems(list(self.models[cat][subcat]))
+        vlayout.addWidget(self.modelsbox)
 
         # add parameter tree
-        model = self.modelsbox.currentText()
-        self.fittable = models[cat][subcat][model]._model
-        self.param_tree = ParameterTree(showTop=False)
-        self.param_tree.addParameters(models[cat][subcat][model]['params'])  
-        self.vlayout.addWidget(self.param_tree)
+        modelname = self.modelsbox.currentText()
+        parameters = self.models[cat][subcat][modelname]['params']
+        param_tree = ParameterTree(showTop=False)
+        param_tree.addParameters(self.parameters)
+        vlayout.addWidget(param_tree)
+        self.fittable = XicamSASModel(modelname, parameters)
 
         # add fit-button 
         fit_button = QPushButton('Fit')
         fit_button.setToolTip('Fit model to the data')
-        self.vlayout.addWidget(fit_button)
-        self.fit_button.clicked.connect(self.run)
+        vlayout.addWidget(fit_button)
+        fit_button.clicked.connect(self.run)
 
-    def run(self, x, y):
+    def update_model(self):
+        cat = self.catbox.currentText()
+        subcat = self.subcatbox.currentText()
+        modelname = self.modelsbox.currentText()
+        parameters = self.models[cat][subcat][modelname]['params']
+        self.fittable = XicamSASModel(modelname, parameters)
+        for p in parameters:
+            if not p.name() in self.fittable.param_names:
+                raise KeyError
+            # set fixed if true
+            self.fittable.fixed[p.name()] = p.child('Fixed').value()
+            # set bounds if available
+            if p.child('Bounded').value():
+                bounds = (p.child('Bounded').child('Lower').value(),
+                            p.child('Bounded').child('Upper').value())        
+                self.fittable.bounds[p.name()] = bounds 
+            else:
+                self.fittable.bounds[p.name()] = (-np.inf, np.inf)
+
+    def update(self, t):
+        self.opt = t
+
+    def run(self, q, I):
+        self.update_model()
         key = self.fitterbox.currentText()
-        fit = self.fitters[key]()
-        self._opt = fit(self.fittable, x, y) 
- 
+        fitting_method = fitters[key]()
+        threads.QThreadFuture(fitting_method, self.fittable, q, I, callback_slot=update)
