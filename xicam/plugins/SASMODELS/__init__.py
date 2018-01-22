@@ -14,6 +14,9 @@ from loader import load_models, Categories
 
 
 class SASModelsWidget(QWidgetPlugin):
+    '''
+        documentation:
+    '''
     name = 'SASModel'
 
     fitters = OrderedDict({
@@ -86,9 +89,17 @@ class SASModelsWidget(QWidgetPlugin):
 
     def update(self, t):
         self.opt = t
+        return t
 
-    def run(self, q, I):
+    def run(self, q, I, callback_slot=None):
+        if callback_slot is None: callback_slot=lambda t: None
         self.update_model()
         key = self.fitterbox.currentText()
         fitting_method = fitters[key]()
-        threads.QThreadFuture(fitting_method, self.fittable, q, I, callback_slot=update)
+        thread=threads.QThreadFuture(fitting_method, 
+                              self.fittable, 
+                              q, 
+                              I,
+                              callback_slot=lambda t:callback_slot(self.update(t)))
+        thread.start()
+        return thread
