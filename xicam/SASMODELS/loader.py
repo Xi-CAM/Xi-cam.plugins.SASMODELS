@@ -7,13 +7,6 @@ from pyqtgraph.parametertree import Parameter
 
 cfg = 'config.yml'
 
-Categories = [\
-    u'Shape Functions', \
-#    u'Shape-Independent Functions', \
-#    u'Structure Factors' \
-    ]
-
-
 # Fitting related
 _fixed = { 'name':'Fixed', 'value': True, 'type':'bool' }
 _bounds = [{'name':'Lower', 'value':'-\u221E'}, {'name':'Upper', 'value':'\u221E'}]
@@ -40,24 +33,19 @@ class XiCamParameter(yaml.YAMLObject, Parameter, metaclass=XiMetaParam):
         return cls(**opts)
 
 def load_models():
-    fp = open(cfg)
-    yml =  yaml.load(fp)
-    fp.close()
-    fittables = []
-    for cat in Categories:
-        model_tree = OrderedDict()
-        for key, val in yml[cat].items():
-            models = OrderedDict()
-            for name, params in val.items():
-                _params = [ p['param'] for p in params ]
-                models[name] = {'params': _params}
-            model_tree[key] = models
-        fittables.append(model_tree)
-    return fittables
+    with open(cfg) as fp:
+        yml =  yaml.load(fp)
+
+    model_tree = OrderedDict()
+    for key, val in yml.items():
+        models = OrderedDict()
+        for name, params in val.items():
+            _params = [ p['param'] for p in params ]
+            models[name] = {'params': _params}
+        model_tree[key] = models
+    return model_tree
 
 if __name__ == '__main__':
     models = load_models()
-    m = models[0]
-    #print(m['Cylinder Functions']['Barbell'])
-    model = m['Cylinder Functions']['Barbell']['model']
-    print(model.param_names)
+    model = models['Cylinder Functions']['Barbell']['params']
+    print(model)

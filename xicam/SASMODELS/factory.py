@@ -15,7 +15,7 @@ def XicamSASModel(name, params):
     in a fittable 1-D plugin for Xi-cam. This object can be passed to astropy for
     data fitting.
     
-    Args: 
+    Parameters: 
         name (str) : name of the sasmoels (http://www.sasview.org/sasmodels/index.html)
         params (dict): key : value pairs of fittable parameters
     Returns:

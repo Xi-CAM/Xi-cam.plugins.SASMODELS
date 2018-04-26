@@ -9,7 +9,7 @@ from collections import OderedDict
 
 from astropy.modeling import fitting
 from factory import XicamSASModel
-from loader import load_models, Categories
+from loader import load_models
 
 
 
@@ -26,7 +26,8 @@ class SASModelsWidget(QWidgetPlugin):
         })
     
     def __init__(self, *args, **kwargs):
-        self.models = load_models()
+        self.models_tree = load_models()
+        self.categories = self.models_tree.keys()
         super().__init__(self, *args, *kwargs)
 
         # verticle layout
@@ -37,26 +38,20 @@ class SASModelsWidget(QWidgetPlugin):
         self.fitterox.addItems(list(fitters.keys()))
         vlayout.addWidget(self.fitterbox)
 
-        # add a dropdown list of model catagories
+        # add a dropdown list of categories
         self.catbox = QComboBox()
-        self.catbox.addItems(Categories)
+        self.catbox.addItems(self.categories)
         vlayout.addWidget(self.catbox)
 
-        # add menu for sub-catagories 
+        # add list of models in category
         cat = self.catbox.currentText()
-        self.subcatbox = QComboBox()
-        self.subcatbox.addItems(list(self.models[cat]))
-        vlayout.addWidget(self.subcatbox)
-
-        # add list of models in subcategory
-        subcat = self.subcatbox.currentText()
         self.modelsbox = QComboBox()
-        self.modelsbox.addItems(list(self.models[cat][subcat]))
+        self.modelsbox.addItems(list(self.models_tree[cat]))
         vlayout.addWidget(self.modelsbox)
 
         # add parameter tree
         modelname = self.modelsbox.currentText()
-        parameters = self.models[cat][subcat][modelname]['params']
+        parameters = self.models_tree[cat][modelname]['params']
         param_tree = ParameterTree(showTop=False)
         param_tree.addParameters(self.parameters)
         vlayout.addWidget(param_tree)
@@ -70,9 +65,8 @@ class SASModelsWidget(QWidgetPlugin):
 
     def update_model(self):
         cat = self.catbox.currentText()
-        subcat = self.subcatbox.currentText()
         modelname = self.modelsbox.currentText()
-        parameters = self.models[cat][subcat][modelname]['params']
+        parameters = self.models_tree[cat][modelname]['params']
         self.fittable = XicamSASModel(modelname, parameters)
         for p in parameters:
             if not p.name() in self.fittable.param_names:
