@@ -52,7 +52,7 @@ def test():
     r = Parameter.create(name='radius', value=200.)
     h = Parameter.create(name='height', value=1000.)
     params =  [r, h]
-    func = XicamModel(name, params)
+    func = XicamSASModel(name, params)
     Iq = func(q)
     plt.loglog(q, Iq)
     plt.show()

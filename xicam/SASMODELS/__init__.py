@@ -3,14 +3,16 @@
 
 from yapsy.IPlugin import IPlugin
 from xicam.plugins import QWidgetPlugin
-form xicam.gui import threads
-from qtpy.QtWidgets import QVboxLayout, QComboBox, QPushButton
-from collections import OderedDict
+from xicam.gui import threads
+from qtpy.QtWidgets import QVBoxLayout, QComboBox, QPushButton
+from collections import OrderedDict
 
 from astropy.modeling import fitting
-from factory import XicamSASModel
-from loader import load_models
+from .factory import XicamSASModel
+from .loader import load_models
+import numpy as np
 
+from pyqtgraph.parametertree import ParameterTree
 
 
 class SASModelsWidget(QWidgetPlugin):
@@ -31,11 +33,11 @@ class SASModelsWidget(QWidgetPlugin):
         super().__init__(self, *args, *kwargs)
 
         # verticle layout
-        vlayout = QVboxLayout()
+        vlayout = QVBoxLayout()
 
         # add a dropdown list of fitting routines
         self.fitterbox = QComboBox()
-        self.fitterox.addItems(list(fitters.keys()))
+        self.fitterox.addItems(list(self.fitters.keys()))
         vlayout.addWidget(self.fitterbox)
 
         # add a dropdown list of categories
@@ -89,7 +91,7 @@ class SASModelsWidget(QWidgetPlugin):
         if callback_slot is None: callback_slot=lambda t: None
         self.update_model()
         key = self.fitterbox.currentText()
-        fitting_method = fitters[key]()
+        fitting_method = self.fitters[key]()
         thread=threads.QThreadFuture(fitting_method, 
                               self.fittable, 
                               q, 

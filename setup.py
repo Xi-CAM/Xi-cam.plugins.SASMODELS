@@ -47,7 +47,7 @@ setup(
     # simple. Or you can use find_packages().
     packages=['sasmodels_plugin'],
     package_dir={'sasmodels':'sasmodels'},
-    install_requires=['Xicam'],
+    install_requires=['xicam', 'sasmodels'],
     setup_requires=[],
 
     #extras_require={
@@ -55,7 +55,7 @@ setup(
     #    'tests': ['pytest', 'coverage'],
     #},
 
-    package_data={'sasmodels': ['*.yapsy-plugin']},
+    package_data={'sasmodels': ['*.yapsy-plugin', '*.yml']},
     # data_files=[],
     #entry_points={},
     #ext_modules=[],
